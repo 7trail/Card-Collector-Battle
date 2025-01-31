@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Card Collector Battle</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="DragDropTouch.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+</head>
+<body>
+  <div id="game-container">
+    <div id="no-resize">
+      <div id="player-area">
+        <div class="player-info">
+          <div>
+            <h2>Your Deck</h2>
+            Deck size: <span id="player-deck-size">40</span>
+          </div>
+          <div class="life-total">Life: <span id="player-life">20</span></div>
+          <div id="player-discard-pile" class="discard-pile">Discard Pile</div>
+          <div id="player-exile-pile" class="discard-pile">Exile Pile</div>
+        </div>
+        <div id="player-field" class="field"></div>
+
+        <div id="player-hand" class="hand"></div>
+      </div>
+      <div id="turn-phase-area">
+        <div id="turn-phase">
+          <span><b id="turn-indicator"></b></span>
+          <div id="turn-phase-2">
+
+            <div class="phase-indicator">
+
+              <span id="current-phase">Draw</span>
+              <button id="next-phase">Next Phase</button>
+
+
+
+
+            </div>
+            <div class="phase-progress">
+              <div class="phase-step" data-phase="draw">Draw</div>
+              <div class="phase-step" data-phase="play">Play</div>
+              <div class="phase-step" data-phase="attack">Attack</div>
+              <div class="phase-step" data-phase="end">End</div>
+            </div>
+
+          </div>
+          <button id="discard-button">Complete Discard</button>
+          <span id="discard-text"></span>
+
+        </div>
+      </div>
+      <div id="opponent-area">
+        <div class="player-info">
+          <div>
+            <h2>Opponent's Deck</h2>
+            Deck size: <span id="opponent-deck-size">40</span>
+          </div>
+          <div class="life-total">
+            Life: <span id="opponent-life">20</span>
+          </div>
+          <div id="opponent-discard-pile" class="discard-pile">Discard Pile</div>
+          <div id="opponent-exile-pile" class="discard-pile">Exile Pile</div>
+        </div>
+        <div id="opponent-field" class="field">
+          <button id="direct-attack-button">Attack Directly</button>
+        </div>
+
+        <div id="opponent-hand" class="hand"></div>
+      </div>
+    </div>
+    <div id="battle-log-area">
+      <div id="sticky">
+        <div id="battle-log">
+
+        </div>
+        <button id="reset-button">Reset Game</button>
+        <button id="help-button">Help</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="turn-change-popup">
+    Your Turn
+  </div>
+
+  <div id="spell-popup">
+    Spell text here
+  </div>
+
+  <div id="help-modal">
+    <div class="help-modal-content">
+      <span class="close-button">&times;</span>
+      <h2>Game Help</h2>
+        <p>Welcome to Card Collector Battle!</p>
+        <h3>Game Phases:</h3>
+        <ul>
+            <li><b>Draw Phase:</b> Draw a card from your deck.</li>
+            <li><b>Play Phase:</b> Play cards from your hand onto the field. You can only play one card per turn unless a card effect says otherwise (<b>GO AGAIN</b>).</li>
+            <li><b>Attack Phase:</b> Attack with cards on your field. You can attack opponent cards or attack the opponent directly if they have no cards or your card has <b>evasive</b>.</li>
+            <li><b>End Phase:</b> End your turn. Card abilities trigger at the end of the turn.</li>
+        </ul>
+        <h3>Card Types:</h3>
+        <ul>
+            <li><b>Creatures:</b> Cards with Power/Defense stats. They can attack and block.</li>
+            <li><b>Spells:</b> Cards with instant effects. Played directly from hand and then discarded.</li>
+            <li><b>Tokens:</b> Special creatures, often weaker than normal cards.</li>
+            <li><b>Tribute Creatures:</b> Extremely powerful creatures that require you to sacrifice two of your creatures to play them.</li>
+        </ul>
+        <h3>Card Keywords:</h3>
+        <ul>
+            <li><b>Evasive:</b> Can attack the opponent directly even if they have field cards.</li>
+            <li><b>Trample:</b> If this card's attack power is greater than the defense of the card it is attacking, the excess damage is dealt to the opponent.</li>
+            <li><b>Go Again:</b> Allows you to play an additional card in the current phase.</li>
+            <li><b>Leeching:</b> When this creature deals combat damage, you gain life equal to the damage dealt.</li>
+            <li><b>Shield:</b> Prevents the first instance of damage each turn.</li>
+            <li><b>Vigilant:</b> This creature does not exhaust to attack and can attack each turn.</li>
+            <li><b>Quick:</b> This creature can attack on the first turn it enters the battlefield.</li>
+
+        </ul>
+        <h3>Card Rarities:</h3>
+        <ul>
+            <li><b>Common</b></li>
+            <li><b>Rare</b></li>
+            <li><b>Epic</b></li>
+            <li><b>Legendary</b></li>
+            <li><b>Holy</b> (rarest and most powerful)</li>
+        </ul>
+        <h3>Activated Abilities:</h3>
+        <p>Some cards have activated abilities that can be used during your Play Phase. These abilities may have a cost, such as discarding a card or paying life.</p>
+        <h3>New Card Effects:</h3>
+        <ul>
+            <li><b>Steal Life:</b> Take life directly from the opponent and add it to your life total.</li>
+            <li><b>Exile Discard:</b> Remove a card from the opponent's discard pile, preventing them from retrieving it later. Exiled cards are permanently removed from the game.</li>
+            <li><b>Deck Manipulation:</b> Look at the top cards of your deck and rearrange them in any order.</li>
+            <li><b>Return from Discard:</b> Retrieve a card from your discard pile back into your hand.</li>
+            <li><b>Look at opponent hand and discard:</b> Look at your opponent's hand and force them to discard a card of your choice.</li>
+            <li><b>Tutor:</b> Search your deck for a specific card and put it into your hand.</li>
+            <li><b>Resurrect:</b> Return a card from your discard pile directly to the battlefield.</li>
+            <li><b>Board Wipe:</b> Destroy all creatures on the field.</li>
+            <li><b>Stun:</b> Prevents a creature from attacking or using abilities for 1 turn.</li>
+            <li><b>Regeneration:</b> Heals a creature at the end of each turn for a duration.</li>
+            <li><b>Poison:</b> Damages a creature at the end of each turn for a duration.</li>
+            <li><b>Clear Status Effects:</b> Removes all status effects from a creature.</li>
+        </ul>
+        <p><b>Objective:</b> Reduce the opponent's life to 0.</p>
+    </div>
+  </div>
+
+  <div id="upgrade-modal" style="display: none;">
+    <div class="upgrade-modal-content">
+      <h2>Upgrade Your Deck!</h2>
+      <p>Choose cards to upgrade your deck. Your deck must contain exactly 40 cards.</p>
+      <div class="upgrade-grid">
+        <div class="deck-section">
+          <h3>Your Deck (<span id="deck-count">40</span> cards)</h3>
+          <div id="current-deck" class="card-grid"></div>
+        </div>
+        <div class="new-cards-section">
+          <h3>New Cards</h3>
+          <div id="new-cards" class="card-grid"></div>
+        </div>
+      </div>
+      <div class="upgrade-controls">
+        <button id="ready-button" disabled>Ready!</button>
+        <p id="deck-warning"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="target-selection-popup">
+    Select a target card for effect.
+  </div>
+
+  <div id="discard-pile-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-discard-modal">&times;</span>
+      <h2>Discard Pile</h2>
+      <div id="discard-pile-cards" class="card-grid"></div>
+    </div>
+  </div>
+
+  <div id="exile-pile-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-exile-modal">&times;</span>
+      <h2>Exile Pile</h2>
+      <div id="exile-pile-cards" class="card-grid"></div>
+    </div>
+  </div>
+
+  <div id="deck-manipulation-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-deck-manipulation-modal">&times;</span>
+      <h2>Rearrange Deck</h2>
+      <p id="deck-manipulation-instructions">Drag and drop the cards to rearrange your deck. "Top" indicates the first card to draw.</p>
+      <div id="deck-manipulation-cards" class="deck-manipulation-cards"></div>
+      <div class="upgrade-controls">
+        <button id="close-deck-manipulation-modal-button">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reveal-popup">
+    <div id="reveal-popup-content">
+      <span class="close-button" id="close-reveal-popup">&times;</span>
+      <h2>Revealed Card</h2>
+      <div id="reveal-card"></div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
