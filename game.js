@@ -169,8 +169,9 @@ class Card {
       this.effect = null;
       this.generateRandomAbilities(multipliers.effectCount, Math.ceil(0.5 + Math.random() * multipliers.effectPower*0.5));
       this.goAgain = Math.random() < 0.2;
-      this.power = Math.ceil(this.power / 2);
+        this.power = Math.ceil(this.power / 2);
       this.defense = Math.ceil(this.defense/1.5);
+      
       if (Math.random() < multipliers.keywordChance * (this.isTribute?3:1)) {
         for (let i = 0; i < (this.isTribute?2:1); i++) {
           let kw = keywords[Math.floor(Math.random() * keywords.length)];
@@ -235,6 +236,10 @@ class Card {
     let f = bbox2.top < 0 ? bbox2.top : 0;
     damageNumber.classList.add('damage-number');
     damageNumber.textContent = `-${amount}`;
+    if (amount < 0) {
+      damageNumber.classList.add('heal');
+      damageNumber.textContent = `+${-amount}`;
+    }
     let bbox = this.render().getBoundingClientRect();
     damageNumber.style.left = (bbox.left +  bbox.width*(0.5+(Math.random()*0.2-0.1))) + "px"
     damageNumber.style.top = (bbox.top + bbox.height*(0.5+(Math.random()*0.2-0.1)) - f) + "px"
@@ -426,6 +431,11 @@ class Card {
         this.game.updateBattleLog(`${this.type} regeneration heals for ${effect.amount}!`);
       } else if (effect.type === 'poison') {
         await this.game.dealDamageToCard(effect.amount, this);
+        this.power -= 2;
+        if (this.power < 0) {
+          this.power = 0;
+        }
+        this.render();
         this.game.updateBattleLog(`${this.type} poison deals ${effect.amount} damage!`);
       }
       if (effect.duration <= 0) {
@@ -876,7 +886,7 @@ class Game {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
-  resetGame() {
+  resetGame(hadWinner=false, playerWon=false) {
     this.playerHand = [];
     this.opponentHand = [];
     this.playerField = [];
@@ -886,6 +896,9 @@ class Game {
     this.playerExilePile = [];
     this.opponentExilePile = [];
     this.currentTurn = Math.random() < 0.5?'player':"opponent";
+    if (hadWinner) {
+      this.currentTurn = !playerWon ? 'player' : 'opponent';
+    }
     this.selectedCard = null;
     this.playerLife = 20;
     this.opponentLife = 20;
@@ -1288,6 +1301,7 @@ class Game {
     async healCard(amount, target){
         if(target) {
             target.defense += amount;
+            target.renderDamageNumber(-amount);
              this.updateBattleLog(`${target.type} is healed for ${amount}!`);
            this.renderHands();
         }
@@ -1304,6 +1318,7 @@ class Game {
     async buffCardDefense(amount, target){
         if(target) {
             target.defense += amount;
+            target.renderDamageNumber(-amount);
              this.updateBattleLog(`${target.type}'s defense is increased by ${amount}!`);
            this.renderHands();
         }
@@ -1594,7 +1609,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     if (newDeck.length === 40) {
       this.initialPlayerDeck = newDeck;
       this.upgradeModal.style.display = 'none';
-      this.resetGame();
+      this.resetGame(true, false);
     }
   }
 
@@ -1641,7 +1656,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     } else if (this.opponentLife <= 0) {
       alert('Congratulations! You Win!');
       this.upgradeOpponentDeck();
-      this.resetGame();
+      this.resetGame(true, true);
     }
   }
 
@@ -2234,14 +2249,19 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
 
             const field = isOpponent ? (effect.positiveEffect ? this.opponentField : this.playerField) : (effect.positiveEffect ? this.playerField : this.opponentField);
             if(field.length > 0){
-              this.isSelectingTarget = true;
-              this.targetSelectionResolve = resolve;
-              
-              this.validTargets = [...field];
-              console.log(this.validTargets);
-              this.targetSelectionPopup.textContent = effect.text;
-              this.targetSelectionPopup.classList.add('show');
-              this.renderHands();
+
+              if(field.length == 1) {
+                resolve(field[0]);
+              } else {
+                this.isSelectingTarget = true;
+                this.targetSelectionResolve = resolve;
+                
+                this.validTargets = [...field];
+                console.log(this.validTargets);
+                this.targetSelectionPopup.textContent = effect.text;
+                this.targetSelectionPopup.classList.add('show');
+                this.renderHands();
+              }
             }
               else {
               resolve(null); 
