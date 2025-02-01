@@ -88,7 +88,7 @@ body {
         width: 80px;
         height: 113px;
         font-size: 10px;
-        
+        touch-action: manipulation;
     }
 
     .life-total {
@@ -309,9 +309,6 @@ body {
   
 }
 
-body {
-  touch-action: manipulation;
-}
 
 .card p {
     margin: 2px 0;
@@ -517,6 +514,7 @@ button, #next-phase, #help-button, #reset-button, #discard-button {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
+  touch-action: manipulation;
 }
 
 button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
