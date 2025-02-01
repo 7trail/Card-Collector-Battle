@@ -620,7 +620,7 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
 }
 
 .card.attacking-animation {
-  animation: attack 0.5s ease-in-out;
+  animation: attack 0.2s ease-in-out;
   animation-fill-mode: forwards;
 }
 
