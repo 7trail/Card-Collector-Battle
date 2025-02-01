@@ -82,13 +82,14 @@ body {
         padding: 3px;
         gap: 3px;
         max-width: 90vw;
+        touch-action: pan-x pan-y;
     }
 
     .card {
         width: 80px;
         height: 113px;
         font-size: 10px;
-        touch-action: manipulation;
+        touch-action: pan-x pan-y;
     }
 
     .life-total {
@@ -514,7 +515,7 @@ button, #next-phase, #help-button, #reset-button, #discard-button {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
-  touch-action: manipulation;
+  touch-action: pan-x pan-y;
 }
 
 button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
