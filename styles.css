@@ -603,6 +603,10 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
   color: #776e00;
 }
 
+* {
+  touch-action: pan-x pan-y;
+}
+
 #discard-button {
   display: none;
   background-color: #ff9800;
