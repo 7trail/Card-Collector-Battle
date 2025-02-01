@@ -585,6 +585,12 @@ class Card {
     }
     cardElement.card = this;
 
+    if (this.game.selectedCard === this) {
+      cardElement.classList.add('attack-selected');
+    } else {
+      cardElement.classList.remove('attack-selected');
+    }
+
     if (this.hasAttacked) { 
       cardElement.classList.add('exhausted');
     } else {

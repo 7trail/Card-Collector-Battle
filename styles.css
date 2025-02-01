@@ -309,6 +309,10 @@ body {
   
 }
 
+body {
+  touch-action: manipulation;
+}
+
 .card p {
     margin: 2px 0;
     padding: 0;
@@ -340,6 +344,11 @@ body {
 .card.selected.target-selected {
   border-color: #dc3545;
   box-shadow: 0 0 10px rgba(220, 53, 69, 0.7);
+}
+
+.card.attack-selected {
+  border-color: #dc3589;
+  box-shadow: 0 0 10px rgba(220, 53, 109, 0.7);
 }
 
 .card.selected.discard-selected {
