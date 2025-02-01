@@ -11,10 +11,10 @@ body {
   width: 95%;
   display: grid;
   grid-template-areas: 
-    "player-area  battle-log"
-    "turn-phase   battle-log"
-    "opponent-area battle-log"
-    "controls     battle-log";
+    "stuff  battle-log"
+    "stuff   battle-log"
+    "stuff battle-log"
+    "stuff     battle-log";
   gap: 10px;
   margin-top: 10px;
   grid-template-columns: 3fr 1fr;
@@ -23,6 +23,14 @@ body {
 #no-resize {
   max-width: 70vw;
   min-width: 70vw;
+  display:grid;
+  grid-template-areas: 
+    "player-area"
+    "turn-phase"
+    "opponent-area"
+    "controls";
+  grid-template-columns: 3fr;
+  grid-area:stuff;
 }
 
 @media (max-width: 800px) {
@@ -33,18 +41,32 @@ body {
         max-width: 90vw;
         min-width: 90vw;
     }
+
+    #turn-phase-area {
+      position: sticky;
+      bottom:0;
+      left:0;
+      z-index: 100;
+    }
+
     #game-container {
         grid-template-rows: auto;
         grid-template-columns: 1fr;
         grid-template-areas:
-          "player-area"
-          "turn-phase"
-          "opponent-area"
+          "stuff"
           "battle-log"
           "controls";
         margin-top: 10px;
         gap: 5px;
         width: 90%;
+    }
+
+    #no-resize {
+      grid-template-areas: 
+    "player-area"
+    "opponent-area"
+    "controls"
+    "turn-phase";
     }
 
     #battle-log-area, #turn-phase-area {
@@ -59,6 +81,7 @@ body {
         min-height: 120px;
         padding: 3px;
         gap: 3px;
+        max-width: 90vw;
     }
 
     .card {
@@ -122,6 +145,47 @@ body {
         margin: 10% auto;
         padding: 15px;
     }
+
+    #player-area {
+      display: grid;
+      grid-template-areas: 
+        "player-info"
+        "hand"
+        "field";
+      grid-template-rows: 1fr 2fr 2fr;
+    }
+
+    #player-field {
+      grid-area: field;
+    }
+
+    #player-hand {
+      grid-area: hand;
+    }
+
+    .player-info {
+      grid-area: player-info;
+    }
+
+    #opponent-area {
+      display: grid;
+      grid-template-areas: 
+        "opponent-field"
+        "opponent-hand"
+        "player-info";
+      grid-template-rows: 2fr 2fr 1fr;
+    }
+
+    #opponent-field {
+      grid-area: opponent-field;
+    }
+
+    #opponent-hand {
+      grid-area: opponent-hand;
+    }
+
+
+
 }
 
 .player-info {
@@ -198,6 +262,10 @@ body {
   overflow-y: hidden;
 }
 
+.field {
+  background-color: #f4f4f4;
+}
+
 .discard-pile {
   min-height: 30px;
   border: 1px dashed #ccc;
@@ -246,7 +314,11 @@ body {
     padding: 0;
     color: #444;
     z-index: 2;
-    touch-action: none;
+    
+}
+
+.card p, .card h3, .card span {
+  touch-action: pan-x;
   user-select: none;
 }
 
@@ -385,10 +457,12 @@ body {
   box-shadow: 0 0 15px #ffc107;
 }
 
+
+
 #turn-phase-area {
   grid-area: turn-phase;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   background-color: #f8f8f8;
   padding: 10px;
@@ -1021,6 +1095,9 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
 
 @media (max-width: 800px) {
 
+  #current-phase {
+    display: none;
+  }
 
   .upgrade-grid {
     grid-template-columns: auto;

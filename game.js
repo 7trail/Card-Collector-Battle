@@ -253,10 +253,11 @@ class Card {
     let tokenSize = 2+effectPower;
     let pluralToken = effectPower > 1 ? "s" : "";
      return [
-        { text: `Draw ${2 * effectPower} cards`, action: (game, isOpponent, target) => game.drawCard(2 * effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 5 },
-        { text: `Gain ${5 * effectPower} life`, action: (game, isOpponent, target) => game.gainLife(5 * effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 1  },
-        { text: `Deal ${2 * effectPower} damage to opponent`, action: (game, isOpponent, target) => game.dealDamage(2 * effectPower, isOpponent), requiresTarget: false, positiveEffect: false, weight: 1  },
-        { text: `Create a ${tokenSize}/${tokenSize} token`, action: (game, isOpponent, target) => game.createToken(effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 1  },
+        { text: `Draw ${1 + effectPower} cards`, action: async (game, isOpponent, target) => game.drawCard(1 + effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 4 },
+        { text: `Draw ${2 * effectPower}, then discard a card`, action: async (game, isOpponent, target) => await game.drawThenDiscard(2 * effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 1.2 },
+        { text: `Gain ${5 * effectPower} life`, action: async (game, isOpponent, target) => game.gainLife(5 * effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 1  },
+        { text: `Deal ${2 * effectPower} damage to opponent`, action: async(game, isOpponent, target) => game.dealDamage(2 * effectPower, isOpponent), requiresTarget: false, positiveEffect: false, weight: 1  },
+        { text: `Create a 3/3 token`, action: async(game, isOpponent, target) => await game.createToken(effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 1  },
         { text: `Opponent loses ${3 * effectPower} life`, action: (game, isOpponent, target) => game.opponentLoseLife(3 * effectPower, isOpponent), requiresTarget: false, positiveEffect: false, weight: 1  },
         { text: `Deal ${4 * effectPower} damage to a card`, action: (game, isOpponent, target) => game.dealDamageToCard(4 * effectPower, target), requiresTarget: true, positiveEffect: false, weight: 1 },
         { text: `Destroy a random enemy card`, action: (game, isOpponent, target) => game.destroyRandomCard(isOpponent), requiresTarget: false, positiveEffect: false, weight: 1 },
@@ -267,16 +268,18 @@ class Card {
         { text: `Decrease all enemy card's attack by ${2*effectPower}`, action: (game, isOpponent, target) => game.continuousDebuffAllAttack(2*effectPower, isOpponent), requiresTarget: false, positiveEffect: false, weight: 0.3 },
         { text: `Decrease all enemy card's defense by ${2*effectPower}`, action: (game, isOpponent, target) => game.continuousDebuffAllDefense(2*effectPower, isOpponent), requiresTarget: false, positiveEffect: false, weight: 0.3 },
        { text: `Deal ${4 * effectPower} damage to all cards`, action: (game, isOpponent, target) => game.dealDamageToAllCards(4 * effectPower, isOpponent), requiresTarget: false, positiveEffect: false, weight: 0.5 },
-       { text: `Return a card from your discard pile to your hand`, action: (game, isOpponent, target) => game.returnCardFromDiscardPileToHand(isOpponent), requiresTarget: false, positiveEffect: true, weight: 1 },
+       { text: `Return a card from your discard pile to your hand`, action: async (game, isOpponent, target) => await game.returnCardFromDiscardPileToHand(isOpponent), requiresTarget: false, positiveEffect: true, weight: 1 },
        { text: `Steal ${2 * effectPower} life from opponent`, action: (game, isOpponent, target) => game.stealLife(2 * effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 0.8 }, 
        { text: `Exile a random card from opponent's discard pile`, action: (game, isOpponent, target) => game.exileRandomDiscard(isOpponent), requiresTarget: false, positiveEffect: false, weight: 0.4 }, 
-       { text: `Rearrange the top ${4 * effectPower} cards of your deck.`, action: (game, isOpponent, target) => game.lookAtDeck(4 * effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 0.75 }, 
+       { text: `Rearrange the top ${4 * effectPower} cards of your deck.`, action: async (game, isOpponent, target) => await game.lookAtDeck(4 * effectPower, isOpponent), requiresTarget: false, positiveEffect: true, weight: 0.75 }, 
       { text: `Give a card you control a shield`, action: (game, isOpponent, target) => { if (target) { target.shielded = true; game.updateBattleLog(`${target.type} gains a shield!`); } }, requiresTarget: true, positiveEffect: true, weight: 1},
-      { text: `Look at your opponent's hand and discard a card`, action: (game, isOpponent, target) => game.lookAtOpponentHandAndDiscard(isOpponent), requiresTarget: false, positiveEffect: true, weight: 1 }, 
+      { text: `Look at your opponent's hand and discard a card`, action: async (game, isOpponent, target) => await game.lookAtOpponentHandAndDiscard(isOpponent), requiresTarget: false, positiveEffect: true, weight: 1 }, 
       { text: `Stun a card for ${effectPower*2} turns`, action: (game, isOpponent, target) => { if (target) { target.addStatusEffect({type: 'stun', duration: effectPower*2}); game.updateBattleLog(`${target.type} is stunned!`); } }, requiresTarget: true, positiveEffect: false, weight: 1 }, 
       { text: `Give regeneration to a card for ${effectPower+1} turns`, action: (game, isOpponent, target) => { if (target) { target.addStatusEffect({type: 'regeneration', duration: effectPower+1, amount: 2}); game.updateBattleLog(`${target.type} gains regeneration!`); } }, requiresTarget: true, positiveEffect: true, weight: 0.7 }, 
       { text: `Poison a card for ${effectPower+1} turns`, action: (game, isOpponent, target) => { if (target) { target.addStatusEffect({type: 'poison', duration: effectPower+1, amount: 3}); game.updateBattleLog(`${target.type} is poisoned!`); } }, requiresTarget: true, positiveEffect: false, weight: 0.7 }, 
       { text: `Clear all status effects from a card`, action: (game, isOpponent, target) => { if (target) { target.clearStatusEffects(); game.updateBattleLog(`Cleared status effects from ${target.type}!`); } }, requiresTarget: true, positiveEffect: true, weight: 0.5 }, 
+      { text: `Create two 2/2 tokens`, action: async (game, isOpponent, target) => {for (let i = 0; i < 2; i++) {await game.createToken(effectPower, isOpponent,2)}}, requiresTarget: false, positiveEffect: true, weight: 0.2  },
+      { text: `Conjure a card from ${2 + effectPower} options`, action: async (game, isOpponent, target) => { await game.conjureCard(2 + effectPower, isOpponent)}, requiresTarget: false, positiveEffect: true, weight: 0.5  },
       ];
   }
 
@@ -354,6 +357,8 @@ class Card {
       this.game.renderHands();
       if (this.activatedAbility.cost === 'discard') {
         if (this.game.playerHand.length > 0) {
+          this.game.targetSelectionPopup.textContent = "Discard a card to activate ability";
+          this.game.targetSelectionPopup.classList.add('show');
           const discarded = await this.game.playerDiscardCard(); 
           if (discarded) {
             this.game.updateBattleLog(`${this.type} activated ability: ${this.activatedAbility.text}`);
@@ -363,9 +368,11 @@ class Card {
             this.abilityUsedThisTurn = true;
             this.game.renderHands();
             this.game.updateNextPhaseButton();
+            this.game.targetSelectionPopup.classList.remove('show');
             return true;
           } else {
             this.game.updateBattleLog(`Discard cancelled or failed.`);
+            this.game.targetSelectionPopup.classList.remove('show');
             return false;
           }
         } else {
@@ -512,7 +519,7 @@ class Card {
   }
 
   async manageCombatDamageEffects() {
-    if(this.combatDamageEffects){
+    if(this.combatDamageEffects && this.game.playerLife > 0 && this.game.opponentLife > 0){
       for (let effect of this.combatDamageEffects) {
               if(typeof effect.action === 'function'){
                 if (this.game.currentPhaseIndex == 1) {
@@ -607,8 +614,8 @@ class Card {
     } else {
       cardElement.classList.remove("ability-active");
     }
-    console.log(this.game.validTargets);
-    console.log(this.game.isSelectingTarget);
+    //console.log(this.game.validTargets);
+    //console.log(this.game.isSelectingTarget);
     if ((this.game.isSelectingTarget && this.game.validTargets.includes(this)) || (this.game.sacrificeInProgress && this.game.playerField.includes(this))) {
       cardElement.classList.add('selectable-target');
     } else {
@@ -1176,8 +1183,9 @@ class Game {
                         this.renderHands();
 
                         await sleep(250);
-                        await effect.action(this, false, await this.selectTargetForAbility(false, effect));
                         this.updateBattleLog(`Card played with ability: ${effect.text}`);
+                        await effect.action(this, false, await this.selectTargetForAbility(false, effect));
+                        
                         card.activeEffect = false;
                         this.renderHands();
                         await sleep(250);
@@ -1198,9 +1206,7 @@ class Game {
   }
 
   async activateSpell(card, isOpponent){
-      if (!isOpponent) {
-        card.showSpellPopup();
-      }
+      card.showSpellPopup();
       if (card.effect && Array.isArray(card.effect)) {
         for (let effect of card.effect) {
           if(typeof effect.action === 'function'){
@@ -1419,10 +1425,10 @@ class Game {
       }
       this.renderHands();
     }
-    async createToken(power, isOpponent = false) {
+    async createToken(power, isOpponent = false, size=3) {
       const field = isOpponent ? this.opponentField : this.playerField;
       if (field.length < 5) {
-        const tokenCard = new Card('Token', 2+power, 2+power, 'Common');
+        const tokenCard = new Card('Token', size, size, 'Common');
         tokenCard.game = this;
         tokenCard.generateRandomAbilities(1, power);
           field.push(tokenCard);
@@ -1434,8 +1440,9 @@ class Game {
                   this.renderHands();
 
                   await sleep(250);
-                  await effect.action(this, false, await this.selectTargetForAbility(false, effect));
-                  this.updateBattleLog(`Card played with ability: ${effect.text}`);
+                  this.updateBattleLog(`Token created with ability: ${effect.text}`);
+                  await effect.action(this, isOpponent, await this.selectTargetForAbility(isOpponent, effect));
+                  
                   tokenCard.activeEffect = false;
                   this.renderHands();
                   await sleep(250);
@@ -2230,6 +2237,9 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     if (this.currentTurn === 'player') {
       this.currentTurn = 'opponent';
       this.showTurnChangePopup('Opponent Turn'); 
+      const element = document.getElementById("opponent-area");
+      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
       this.opponentTurn();
     }
 
@@ -2320,8 +2330,9 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
                 }
                 await sleep(500);
               }
-              await effect.action(this, true, target);
               this.updateBattleLog(`Opponent card played with ability: ${effect.text}`);
+              await effect.action(this, true, target);
+              
               if (this.currentPhaseIndex == 1) {
                 if (target != null && effect.requiresTarget) {
                   target.isTarget = false;
@@ -2337,6 +2348,12 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
           }
         }
       }
+  }
+
+  async drawThenDiscard(amount, isOpponent) {
+    await this.drawCard(amount, isOpponent);
+    await sleep(500);
+    await this.discardSelfCard(isOpponent);
   }
 
   opponentTurn() {
@@ -2402,6 +2419,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
             if (this.opponentHand.length > 1) { // Ensure opponent has cards to discard, keep at least one card
               const cardToDiscardIndex = 0; // Always discard the first card for simplicity for now
               const discardedCard = this.opponentHand.splice(cardToDiscardIndex, 1)[0];
+              this.discardCard(discardedCard, true);
               this.updateBattleLog(`Opponent discarded ${discardedCard.type} to activate ${card.type}'s ability.`);
               this.updateBattleLog(`Opponent's ${card.type} activated ability: ${card.activatedAbility.text} (Cost: Discard)`);
               await card.activatedAbility.action(this, true, await this.selectTargetForAbility(true, card.activatedAbility));
@@ -2421,22 +2439,6 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
               
               
               this.renderHands();
-          }
-          else if (card.activatedAbility.cost === 'discard') { // No cost ability
-            if (this.opponentDiscardPile.length > 0 && card.activatedAbility.action.toString().includes("returnCardFromDiscardPileToHand")) {
-              await card.activatedAbility.action(this, true, await this.selectTargetForAbility(true, card.activatedAbility));
-              card.abilityUsedThisTurn = true;
-              await sleep(500);
-
-            } else {
-              this.updateBattleLog(`Opponent's ${card.type} activated ability: ${card.activatedAbility.text} (No Cost)`);
-              await card.activatedAbility.action(this, true, await this.selectTargetForAbility(true, card.activatedAbility));
-              card.abilityUsedThisTurn = true;
-
-              await sleep(500);
-            }
-
-
           } else { // No cost ability
             this.updateBattleLog(`Opponent's ${card.type} activated ability: ${card.activatedAbility.text} (No Cost)`);
             await card.activatedAbility.action(this, true, await this.selectTargetForAbility(true, card.activatedAbility));
@@ -2567,6 +2569,8 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       this.updatePhaseDisplay();
       this.updateLifeDisplay();
       this.showTurnChangePopup('Your Turn'); // Show popup for player turn
+      const element = document.getElementById("player-area");
+      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, 100);
   }
 
@@ -2698,6 +2702,128 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     }
   }
 
+  async discardSelfCard(isOpponent) {
+    if (isOpponent) {
+      const randomIndex = Math.floor(Math.random() * this.opponentHand.length);
+      const discardedCard = this.opponentHand.splice(randomIndex, 1)[0];
+      this.discardCard(discardedCard, true);
+      this.updateBattleLog(`Opponent discards their ${discardedCard.type}.`);
+      this.renderHands();
+    } else {
+      const revealPopup = document.getElementById('reveal-popup');
+      const revealCardContainer = document.getElementById('reveal-card');
+      revealCardContainer.innerHTML = '';
+      revealCardContainer.style.display = 'grid';
+      revealCardContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+      revealCardContainer.style.minHeight = '400px';
+      revealCardContainer.style.maxHeight = '400px';
+      revealCardContainer.style.overflowY = 'auto';
+      revealCardContainer.style.width = 'auto';
+
+
+      this.playerHand.forEach(card => {
+        const cardElement = card.render();
+        cardElement.addEventListener('click', () => {
+          const index = this.playerHand.indexOf(card);
+          if (index > -1) {
+            this.playerHand.splice(index, 1);
+            this.discardCard(card, false); 
+            this.updateBattleLog(`You discarded ${card.type}.`);
+            revealPopup.style.display = 'none';
+            revealCardContainer.innerHTML = '';
+          }
+        });
+        revealCardContainer.appendChild(cardElement);
+      });
+
+      revealPopup.style.display = 'flex';
+      return new Promise((resolve) => {
+        const closeHandler = () => {
+          revealCardContainer.style.display = '';
+          revealCardContainer.style.minHeight = '';
+          revealCardContainer.style.maxHeight = '';
+          revealCardContainer.style.overflowY = '';
+          revealCardContainer.style.width = '';
+
+          revealPopup.style.display = 'none';
+          revealCardContainer.innerHTML = '';
+          resolve(false); 
+          revealPopup.removeEventListener('click', closeHandler);
+        };
+        revealPopup.addEventListener('click', closeHandler);
+      });
+    }
+  }
+
+  conjureCard(amount, isOpponent) {
+    return new Promise((resolve) => {
+      let newCards = [];
+      for (let i = 0; i < amount; i++) {
+        let c = new Card();
+        c.generateRandomCard('upgrade');
+        c.game = this;
+        newCards.push(c);
+      }
+
+      if (!isOpponent) {
+        const revealPopup = document.getElementById('reveal-popup');
+        const revealCardContainer = document.getElementById('reveal-card');
+        revealCardContainer.innerHTML = '';
+        revealCardContainer.style.display = 'grid';
+        revealCardContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+        revealCardContainer.style.minHeight = '400px';
+        revealCardContainer.style.maxHeight = '400px';
+        revealCardContainer.style.overflowY = 'auto';
+        revealCardContainer.style.width = 'auto';
+
+
+        newCards.forEach(card => {
+          const cardElement = card.render();
+          cardElement.addEventListener('click', () => {
+            this.playerHand.push(card);
+            this.updateBattleLog(`You conjured ${card.type}.`);
+            revealPopup.style.display = 'none';
+            revealCardContainer.innerHTML = '';
+            this.renderHands();
+          });
+          revealCardContainer.appendChild(cardElement);
+        });
+
+        revealPopup.style.display = 'flex';
+        
+        const closeHandler = () => {
+          revealCardContainer.style.display = '';
+          revealCardContainer.style.minHeight = '';
+          revealCardContainer.style.maxHeight = '';
+          revealCardContainer.style.overflowY = '';
+          revealCardContainer.style.width = '';
+
+          revealPopup.style.display = 'none';
+          revealCardContainer.innerHTML = '';
+          
+          revealPopup.removeEventListener('click', closeHandler);
+          console.log("Triggering");
+          resolve(false); 
+        };
+        revealPopup.addEventListener('click', closeHandler);
+        
+      } else {
+        let highRarity = 0;
+        let rarities = ["Common", "Rare", "Epic", "Legendary", "Holy"];
+        for (let i = 0; i < newCards.length; i++) {
+          let card = newCards[i];
+          if (rarities.indexOf(card.rarity) > highRarity) {
+            highRarity = i;
+          }
+        }
+        this.opponentHand.push(newCards[highRarity]);
+        this.updateBattleLog(`Opponent conjures ${newCards[highRarity].type}.`);
+        this.renderHands();
+        resolve(true);
+      }
+    });
+  }
+
   async lookAtOpponentHandAndDiscard(isOpponent) {
     if (!isOpponent) {
       const revealPopup = document.getElementById('reveal-popup');
@@ -2713,8 +2839,6 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
 
       this.opponentHand.forEach(card => {
         const cardElement = card.render();
-        cardElement.style.margin = "10px";
-        cardElement.style.cursor = "pointer";
         cardElement.addEventListener('click', () => {
           const index = this.opponentHand.indexOf(card);
           if (index > -1) {
@@ -2819,8 +2943,8 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
                 this.renderHands();
 
                 await sleep(250);
-                await effect.action(this, false, await this.selectTargetForAbility(false, effect));
                 this.updateBattleLog(`Card played with ability: ${effect.text}`);
+                await effect.action(this, false, await this.selectTargetForAbility(false, effect));
                 card.activeEffect = false;
                 this.renderHands();
                 await sleep(250);
