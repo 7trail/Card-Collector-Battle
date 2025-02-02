@@ -2245,7 +2245,8 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       this.showTurnChangePopup('Opponent Turn'); 
       const element = document.getElementById("opponent-area");
       element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
+      
+      document.body.style.zoom = 1.0
       this.opponentTurn();
     }
 
@@ -2577,6 +2578,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       this.showTurnChangePopup('Your Turn'); // Show popup for player turn
       const element = document.getElementById("player-area");
       element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      document.body.style.zoom = 1.0;
   }, 100);
   }
 
