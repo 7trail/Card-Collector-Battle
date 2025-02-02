@@ -2003,6 +2003,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       if (i > rearrangedDeckCards.length) {
         f.unshift(this.playerDeck[i]);
       }
+        this.playerDeck[i].render(true);
     }
     // Update player deck with rearranged cards (top cards first)
     this.playerDeck = f;
@@ -2013,7 +2014,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       this.deckManipulationResolve(true); // Resolve deck manipulation promise
       this.deckManipulationResolve = null;
     }
-
+    
     this.updateDeckCount();
     this.updateBattleLog("Your deck has been rearranged.");
   }
