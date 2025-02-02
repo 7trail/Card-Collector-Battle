@@ -588,6 +588,7 @@ class Card {
       cardElement.innerHTML = '';
     } else {
       this.renderElement = cardElement;
+      this.hooks = [];
     }
     cardElement.card = this;
 
@@ -2804,6 +2805,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
             this.updateBattleLog(`You conjured ${card.type}.`);
             revealPopup.style.display = 'none';
             revealCardContainer.innerHTML = '';
+            card.render(true);
             this.renderHands();
           });
           revealCardContainer.appendChild(cardElement);
