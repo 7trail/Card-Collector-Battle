@@ -1081,6 +1081,8 @@ class Game {
         this.playerField.forEach(card => card.hasAttacked = false);
         this.playerField.forEach(card => card.abilityUsedThisTurn = false);
         this.cardPlayedThisTurn = false;
+        this.selectedCard = null;
+        this.renderHands();
         this.currentPhaseIndex = 3;
         break;
       case 'end':
@@ -1785,6 +1787,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
           } else {
             await this.selectCardForAttack(card);
           }
+          this.renderHands();
         });
       }
       
