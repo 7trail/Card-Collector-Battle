@@ -55,6 +55,7 @@ class Card {
     this.shielded = false; 
     this.isTribute = false; 
     this.statusEffects = []; 
+    this.abort = null;
   }
 
   resetCard() {
@@ -72,6 +73,9 @@ class Card {
     this.abilityIsActive = false;
     this.activeEffect = false;
     this.draggable = false;
+    if (this.abort) {
+      this.abort.abort()
+      }
   }
 
   addKeyword(kw) {
@@ -1563,16 +1567,17 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     this.initialPlayerDeck.forEach(card => {
       card.resetCard();
       card.render();
+      card.abort = new AbortController();
       const cardElement = card.render();
       cardElement.classList.add('draggable-card');
       cardElement.draggable = true;
       cardElement.addEventListener('dragstart', () => {
         cardElement.classList.add('dragging');
-      });
+      }, { signal: card.abort.signal });
       cardElement.addEventListener('dragend', () => {
         cardElement.classList.remove('dragging');
         this.updateDeckCount();
-      });
+      }, { signal: card.abort.signal });
        currentDeckElement.appendChild(cardElement);
 
     });
@@ -1580,15 +1585,16 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
 
     this.newCards.forEach(card => {
       const cardElement = card.render();
+      card.abort = new AbortController();
       cardElement.classList.add('draggable-card');
       cardElement.draggable = true;
       cardElement.addEventListener('dragstart', () => {
         cardElement.classList.add('dragging');
-      });
+      }, { signal: card.abort.signal });
       cardElement.addEventListener('dragend', () => {
         cardElement.classList.remove('dragging');
         this.updateDeckCount();
-      });
+      }, { signal: card.abort.signal });
       newCardsElement.appendChild(cardElement);
     });
 
