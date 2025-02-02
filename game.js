@@ -1728,7 +1728,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     document.getElementById('opponent-life').textContent = this.opponentLife;
   }
 
-  renderHands() {
+  renderHands(reset=false) {
     const playerHandElement = document.getElementById('player-hand');
     const opponentHandElement = document.getElementById('opponent-hand');
     const playerFieldElement = document.getElementById('player-field');
@@ -1748,7 +1748,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
 
 
     this.playerHand.forEach(card => {
-      const cardElement = card.render();
+      const cardElement = card.render(reset);
       if (!card.hooks.includes("hand-click")) {
         card.hooks.push("hand-click")
         cardElement.addEventListener('click', () => {if (this.playerHand.includes(card)) this.handleCardClick(card, this.playerHand, this.playerField, true)})
@@ -1768,7 +1768,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     });
 
     this.playerField.forEach(card => {
-      const cardElement = card.render();
+      const cardElement = card.render(reset);
       if (!card.hooks.includes("field-click")) {
 
         card.hooks.push("field-click");
@@ -2770,6 +2770,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
           revealCardContainer.innerHTML = '';
           resolve(false); 
           revealPopup.removeEventListener('click', closeHandler);
+          this.renderHands(true);
         };
         revealPopup.addEventListener('click', closeHandler);
       });
