@@ -71,7 +71,7 @@ class Card {
     }
     this.abilityIsActive = false;
     this.activeEffect = false;
-
+    this.draggable = false;
   }
 
   addKeyword(kw) {
