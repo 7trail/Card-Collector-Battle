@@ -77,6 +77,7 @@ class Card {
       this.abort.abort()
       }
       this.render(true);
+      this.hooks = []
   }
 
   addKeyword(kw) {
