@@ -76,6 +76,7 @@ class Card {
     if (this.abort) {
       this.abort.abort()
       }
+      this.render(true);
   }
 
   addKeyword(kw) {
