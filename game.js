@@ -756,7 +756,7 @@ class Card {
 
           if (this.keywords.includes("trample")) {
             overkill = Math.max(0, this.power - defendingCard.defense);
-            damageDealt = defendingCard.defense;
+            damageDealt = this.power - overkill;
             if (overkill > 0) {
               let isOpponent = this.game.opponentField.includes(this);
               this.game.dealDamage(overkill, isOpponent);
