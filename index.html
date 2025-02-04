@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,22 +9,18 @@
 </head>
 <body>
   <div id="game-container">
-    <div id="no-resize">
+
       <div id="turn-phase-area">
         <div class="life-total">Your Life: <span id="player-life">20</span></div>
         <div id="turn-phase">
-          
-          
           <div id="turn-phase-2">
-
             <div class="phase-indicator">
 
-              <span id="current-phase">Draw</span>
-              <button id="next-phase">Next Phase</button>
-              <span><b id="turn-indicator"></b></span>
-
-
-
+              <div id="turn-phase-inner">
+                <span id="current-phase">Draw</span>
+                <button id="next-phase">Next Phase</button>
+              </div>
+              <span id="turn-indicator"></span>
             </div>
             <div class="phase-progress">
               <div class="phase-step" data-phase="draw">Draw</div>
@@ -33,11 +28,9 @@
               <div class="phase-step" data-phase="attack">Attack</div>
               <div class="phase-step" data-phase="end">End</div>
             </div>
-
           </div>
           <button id="discard-button">Complete Discard</button>
           <span id="discard-text"></span>
-
         </div>
         <div class="life-total">
           Their Life: <span id="opponent-life">20</span>
@@ -49,24 +42,24 @@
             <h2>Your Zone</h2>
             Deck size: <span id="player-deck-size">40</span>
           </div>
-          
+
           <div id="player-discard-pile" class="discard-pile">Discard Pile</div>
-          <div id="player-exile-pile" class="discard-pile">Exile Pile</div>
+          <div id="player-exile-pile" class="exile-pile">Exile Pile</div>
         </div>
         <div id="player-field" class="field"></div>
 
         <div id="player-hand" class="hand"></div>
       </div>
-      
+
       <div id="opponent-area">
         <div class="player-info">
           <div>
             <h2>Opponent's Zone</h2>
             Deck size: <span id="opponent-deck-size">40</span>
           </div>
-          
+
           <div id="opponent-discard-pile" class="discard-pile">Discard Pile</div>
-          <div id="opponent-exile-pile" class="discard-pile">Exile Pile</div>
+          <div id="opponent-exile-pile" class="exile-pile">Exile Pile</div>
         </div>
         <div id="opponent-field" class="field">
           <button id="direct-attack-button">Attack Directly</button>
@@ -74,14 +67,19 @@
 
         <div id="opponent-hand" class="hand"></div>
       </div>
-    </div>
+
     <div id="battle-log-area">
       <div id="sticky">
-        <div id="battle-log">
-
+        <div id="win-tracker">
+          <div id="player-wins-display">Your Wins: <span id="player-wins">0</span></div>
+          <div id="opponent-wins-display">Opponent Wins: <span id="opponent-wins">0</span></div>
         </div>
-        <button id="reset-button">Reset Game</button>
-        <button id="help-button">Help</button>
+        <div id="battle-log"></div>
+        <div id="controls-area">
+          <button id="reset-button">Reset Round</button>
+          <button id="full-reset-button">Reset Game</button>
+          <button id="help-button">Help</button>
+        </div>
       </div>
     </div>
 
@@ -135,6 +133,8 @@
         <p>Some cards have activated abilities that can be used during your Play Phase. These abilities may have a cost, so be sure you want to use them!</p>
         <h3>Deck Building:</h3>
         <p>Each time a player loses, they get new cards to add to their deck! Switch cards from the two sections by dragging them back and forth. Your final deck must be 40 cards.</p>
+        <h3>Winning the Game:</h3>
+        <p>The first player to win five rounds wins the entire game. After a full game win, both player's decks are completely reset.</p>
     </div>
   </div>
 
@@ -195,8 +195,12 @@
     <div id="reveal-popup-content">
       <span class="close-button" id="close-reveal-popup">&times;</span>
       <h2>Revealed Card</h2>
-      <div id="reveal-card"></div>
+      <div id="reveal-card"></div> 
     </div>
+  </div>
+
+  <div id="game-message-popup">
+    <h2 id="game-message-text">Game Message</h2>
   </div>
 
   <script src="game.js"></script>

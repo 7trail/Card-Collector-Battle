@@ -11,13 +11,13 @@ body {
   width: 95%;
   display: grid;
   grid-template-areas: 
-    "stuff  battle-log"
-    "stuff   battle-log"
-    "stuff battle-log"
-    "stuff     battle-log";
+    "player-area  battle-log"
+    "turn-phase   battle-log"
+    "opponent-area battle-log"
+    "controls     battle-log";
   gap: 10px;
   margin-top: 10px;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 75% 25%;
 }
 
 #no-resize {
@@ -28,6 +28,7 @@ body {
     "player-area"
     "turn-phase"
     "opponent-area"
+    "battle-log"
     "controls";
   grid-template-columns: 3fr;
   grid-area:stuff;
@@ -267,7 +268,7 @@ body {
   background-color: #f4f4f4;
 }
 
-.discard-pile {
+.discard-pile, .exile-pile {
   min-height: 30px;
   border: 1px dashed #ccc;
   border-radius: 5px;
@@ -280,7 +281,7 @@ body {
   transition: background-color 0.2s ease-in-out;
 }
 
-.discard-pile:hover {
+.discard-pile:hover, .exile-pile:hover {
   background-color: #eee;
 }
 
@@ -307,7 +308,7 @@ body {
   flex-grow: 0;
   flex-shrink: 0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  
+
 }
 
 
@@ -316,7 +317,7 @@ body {
     padding: 0;
     color: #444;
     z-index: 2;
-    
+
 }
 
 .card p, .card h3, .card span {
@@ -405,8 +406,8 @@ body {
 }
 
 .card.tribute {
-  
-  border-color: #FF7F50; /* Coral border 
+
+  border-color: #FF7F50; /* Coral border */
   color: white; /* White text for contrast */
   box-shadow: 0 0 15px rgba(255, 69, 0, 0.7); /* Orange glow */
 }
@@ -478,32 +479,39 @@ body {
   border: 1px solid #ddd;
 }
 
+#turn-phase {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  justify-content: center;
+}
+
+#turn-phase-2 {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+
+#controls-area {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .phase-indicator {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-#next-phase {
-  margin-left: 10px;
-  padding: 8px 15px;
-  background-color: #5cb85c;
+#reset-button {
+  background-color: #dc3545;
   color: white;
   border: none;
   border-radius: 5px;
+  padding: 8px 15px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
-}
-
-#next-phase:hover {
-  background-color: #507e4c;
-}
-
-#game-controls {
-  grid-area: controls;
-  display: none;
-  justify-content: center;
-  gap: 20px;
 }
 
 button, #next-phase, #help-button, #reset-button, #discard-button {
@@ -518,8 +526,34 @@ button, #next-phase, #help-button, #reset-button, #discard-button {
   touch-action: pan-x pan-y;
 }
 
-button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
-  background-color: #0056b3;
+
+#reset-button:hover {
+  background-color: #c82333;
+}
+
+#full-reset-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+#full-reset-button:hover {
+  background-color: #5a6268;
+}
+
+#win-tracker {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+#player-wins-display, #opponent-wins-display {
+  color: #333;
 }
 
 #battle-log-area {
@@ -542,16 +576,6 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
 .hidden-card {
   background-color: #ccc;
   border-color: #bbb;
-}
-
-#turn-phase {
-  display: flex;
-  align-items: center;
-}
-
-#turn-phase-2 {
-  padding-left: 10px;
-  padding-right: 10px;
 }
 
 .phase-progress {
@@ -687,7 +711,7 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
   filter: grayscale(60%);
 }
 
-#turn-change-popup {
+#turn-change-popup, #game-message-popup {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -705,7 +729,11 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
   text-align: center;
 }
 
-#turn-change-popup.show {
+#game-message-popup {
+    z-index: 1004;
+}
+
+#game-message-popup.show, #turn-change-popup.show {
   visibility: visible;
   animation: fadeInOut 2s ease-in-out;
 }
@@ -978,7 +1006,7 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
   font-style: italic;
 }
 
-#close-exile-modal, #close-deck-manipulation-modal {
+#close-exile-modal, #close-deck-manipulation-modal, #close-game-message-popup {
   color: #aaa;
   float: right;
   font-size: 28px;
@@ -988,7 +1016,9 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
 #close-exile-modal:hover,
 #close-exile-modal:focus,
 #close-deck-manipulation-modal:hover,
-#close-deck-manipulation-modal:focus {
+#close-deck-manipulation-modal:focus,
+#close-game-message-popup:hover,
+#close-game-message-popup:focus {
   color: black;
   text-decoration: none;
   cursor: pointer;
@@ -1106,7 +1136,6 @@ button:hover, #help-button:hover, #reset-button:hover, #discard-button:hover {
 }
 
 @media (max-width: 800px) {
-
   #current-phase {
     display: none;
   }

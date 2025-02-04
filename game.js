@@ -286,6 +286,9 @@ class Card {
       { text: `Clear all status effects from a card`, action: (game, isOpponent, target) => { if (target) { target.clearStatusEffects(); game.updateBattleLog(`Cleared status effects from ${target.type}!`); } }, requiresTarget: true, positiveEffect: true, weight: 0.5 }, 
       { text: `Create two 2/2 tokens`, action: async (game, isOpponent, target) => {for (let i = 0; i < 2; i++) {await game.createToken(effectPower, isOpponent,2)}}, requiresTarget: false, positiveEffect: true, weight: 0.2  },
       { text: `Conjure a card from ${2 + effectPower} options`, action: async (game, isOpponent, target) => { await game.conjureCard(2 + effectPower, isOpponent)}, requiresTarget: false, positiveEffect: true, weight: 0.5  },
+      { text: `Exile a random card from your opponent's hand`, action: async (game, isOpponent, target) => await game.exileRandomCardFromHand(isOpponent), requiresTarget: false, positiveEffect: false, weight: 0.5 },
+      { text: `Play a card from your opponent's exile`, action: async (game, isOpponent, target) => await game.playCardFromExile(isOpponent), requiresTarget: false, positiveEffect: true, weight: 0.7 },
+      { text: `Exile top ${2*effectPower} cards of opponent's deck`, action: async (game, isOpponent, target) => await game.exileTopCardsOfDeck(2*effectPower, isOpponent), requiresTarget: false, positiveEffect: false, weight: 0.6 },
       ];
   }
 
@@ -838,6 +841,10 @@ class Game {
     this.newCards = [];
     this.setupUpgradeModal();
 
+    this.playerWins = 0;
+    this.opponentWins = 0;
+    this.roundsPlayed = 0; 
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.initializeGame());
     } else {
@@ -853,11 +860,17 @@ class Game {
     this.setupDragAndDrop();
   }
 
-  getAllCardsOnField() {
-    if (this.currentTurn === "player") {
-      return [...this.playerField, ...this.opponentField];
-    }
-    return [...this.opponentField, ...this.playerField];
+  fullReset() {
+    this.playerWins = 0;
+    this.opponentWins = 0;
+    this.roundsPlayed = 0;
+    this.updateWinDisplay();
+
+    this.initialPlayerDeck = [];
+    this.initialOpponentDeck = [];
+    this.initializeDeck(this.initialPlayerDeck, 40, 'initial');
+    this.initializeDeck(this.initialOpponentDeck, 40, 'initial');
+    this.resetGame();
   }
 
   setupDragAndDrop() {
@@ -977,11 +990,12 @@ class Game {
       this.deckManipulationModal = document.getElementById('deck-manipulation-modal');
       this.deckManipulationInstructions = document.getElementById('deck-manipulation-instructions');
       this.closeDeckManipulationModalButton = document.getElementById('close-deck-manipulation-modal');
-
+      this.gameMessagePopup = document.getElementById('game-message-popup');
+      this.gameMessageText = document.getElementById('game-message-text');
 
     this.initializeDeck(this.initialPlayerDeck, 40, 'initial'); 
     this.initializeDeck(this.initialOpponentDeck, 40, 'initial'); 
-    this.resetGame(); 
+    this.fullReset(); 
 
 
     this.setupEventListeners();
@@ -1019,6 +1033,7 @@ class Game {
           this.hideDeckManipulationModal();
         }
       });
+      
   }
 
 
@@ -1029,11 +1044,16 @@ class Game {
     }
     if (this.resetButton) {
       this.resetButton.addEventListener('click', () => {
-        if (confirm("Are you sure you want to reset?")) {
+        if (confirm("Are you sure you want to reset the round?")) {
           this.resetGame();
         }
       });
     }
+    document.getElementById('full-reset-button').addEventListener('click', () => {
+      if (confirm("Are you sure you want to FULLY reset the game? This will reset win counts and decks.")) {
+        this.fullReset();
+      }
+    });
     if (this.helpButton) {
       this.helpButton.addEventListener('click', () => this.helpModal.style.display = "block");
     }
@@ -1046,8 +1066,6 @@ class Game {
       }
     });
   }
-
-  
 
   updatePhaseDisplay() {
     const phaseSteps = document.querySelectorAll('.phase-step');
@@ -1068,7 +1086,7 @@ class Game {
       if (!this.canPlayCard) {
         return;
       }
-      if(this.discardPhaseActive && this.currentTurn === 'player') {
+      if(this.discardPhaseActive && this.currentTurn === 'player'){
           this.updateBattleLog("Please select cards to discard before advancing.");
         return;
       }
@@ -1124,12 +1142,12 @@ class Game {
     checkDeckDepletion(isOpponent) {
         if (isOpponent) {
             if (this.opponentDeck.length === 0) {
-                alert('Game Over! Player Wins! Opponent deck depleted.');
+                this.showGameMessagePopup('Game Over! Player Wins! Opponent deck depleted.');
                 this.resetGame();
             }
         } else {
             if (this.playerDeck.length === 0) {
-                alert('Game Over! Opponent Wins! Your deck depleted.');
+                this.showGameMessagePopup('Game Over! Opponent Wins! Your deck depleted.');
                 this.showUpgradeMenu(); 
                 //this.resetGame();
             }
@@ -1451,14 +1469,14 @@ class Game {
         if(tokenCard.onPlayEffect){
           for (let effect of tokenCard.onPlayEffect) {
               if(typeof effect.action === 'function'){
-                tokenCard.activeEffect = true;
+                tokenCard.activeEffect=true;
                   this.renderHands();
 
                   await sleep(250);
                   this.updateBattleLog(`Token created with ability: ${effect.text}`);
                   await effect.action(this, isOpponent, await this.selectTargetForAbility(isOpponent, effect));
                   
-                  tokenCard.activeEffect = false;
+                  tokenCard.activeEffect=false;
                   this.renderHands();
                   await sleep(250);
               } else {
@@ -1674,53 +1692,34 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
 
   checkGameOver() {
     if (this.playerLife <= 0) {
-      alert('Game Over! Opponent Wins!');
-      this.showUpgradeMenu(); 
-      //this.resetGame();
+      this.opponentWins++;
+      this.updateWinDisplay();
+      if (this.opponentWins >= 5) {
+        this.showGameMessagePopup('Game Over! Opponent Wins the Game!');
+        this.fullReset(); 
+      } else {
+        this.showGameMessagePopup('Round Over! Opponent Wins!');
+        this.showUpgradeMenu();
+        this.resetGame(true, false); 
+      }
+
     } else if (this.opponentLife <= 0) {
-      alert('Congratulations! You Win!');
-      this.upgradeOpponentDeck();
-      this.resetGame(true, true);
+      this.playerWins++;
+      this.updateWinDisplay();
+      if (this.playerWins >= 5) {
+        this.showGameMessagePopup('Congratulations! You Win the Game!');
+        this.fullReset(); 
+      } else {
+        this.showGameMessagePopup('Round Over! You Win!');
+        this.upgradeOpponentDeck();
+        this.resetGame(true, true); 
+      }
     }
   }
 
-  upgradeOpponentDeck() {
-    const newCards = [];
-    for (let i = 0; i < 8; i++) {
-      const card = new Card();
-      card.game = this;
-      newCards.push(card.generateRandomCard('upgrade'));
-    }
-
-    this.initialOpponentDeck.sort((a, b) => {
-      const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary', 'Holy'];
-      let i = rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
-      if (i == 0) {
-        i = a.type.localeCompare(b.type);
-      }
-      if (i == 0 && a.type !== "Spell") {
-        i = a.power - b.power;
-      }
-      return i;
-    });
-
-    let cardsToRemove = 5;
-    let currentIndex = 0;
-
-    this.initialOpponentDeck.sort((a, b) => {
-      const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary', 'Holy'];
-      return rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
-    });
-    while (cardsToRemove > 0) {
-      this.initialOpponentDeck.splice(0,1);
-      cardsToRemove--;
-    }
-
-    for (let i = 0; i < 5; i++) {
-      this.initialOpponentDeck.push(newCards[i]);
-    }
-
-    this.updateBattleLog("Opponent's deck has been upgraded with new cards!");
+  updateWinDisplay() {
+    document.getElementById('player-wins').textContent = this.playerWins;
+    document.getElementById('opponent-wins').textContent = this.opponentWins;
   }
 
   updateLifeDisplay() {
@@ -1933,9 +1932,8 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       cardsContainer.appendChild(cardElement);
     });
  
-    modal.style.display = 'flex'; // Use flex to properly display modal
+    modal.style.display = 'flex'; 
 
-    // Add dragover and drop event listeners
     cardsContainer.addEventListener('dragover', this.handleDragOver.bind(this));
     cardsContainer.addEventListener('drop', this.handleDrop.bind(this));
   }
@@ -1961,16 +1959,24 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     const updatedCards = Array.from(cardsContainer.children).map(cardElement => cardElement.card);
     this.deckManipulationCards = updatedCards;
 
-    // Update data-position attributes
+    cardsContainer.innerHTML = '';
     this.deckManipulationCards.forEach((card, index) => {
-      const cardElement = cardsContainer.children[index];
+      const cardElement = card.render();
+      cardElement.classList.add('draggable-card');
+      cardElement.draggable = true;
       cardElement.setAttribute('data-position', index === this.deckManipulationCards.length - 1 ? 'Top' : '');
-      cardElement.classList.remove('top', 'bottom');
       if (index === 0) {
         cardElement.classList.add('bottom');
       } else if (index === this.deckManipulationCards.length - 1) {
         cardElement.classList.add('top');
       }
+      cardElement.addEventListener('dragstart', () => {
+        cardElement.classList.add('dragging');
+      });
+      cardElement.addEventListener('dragend', () => {
+        cardElement.classList.remove('dragging');
+      });
+      cardsContainer.appendChild(cardElement);
     });
   }
 
@@ -2006,13 +2012,12 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       }
         this.playerDeck[i].render(true);
     }
-    // Update player deck with rearranged cards (top cards first)
     this.playerDeck = f;
 
 
-    this.deckManipulationCards = []; // Clear temp cards
+    this.deckManipulationCards = []; 
     if (this.deckManipulationResolve) {
-      this.deckManipulationResolve(true); // Resolve deck manipulation promise
+      this.deckManipulationResolve(true); 
       this.deckManipulationResolve = null;
     }
     
@@ -2252,6 +2257,19 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       }
   }
 
+  getAllCardsOnField() {
+    if (this.currentTurn === "player") {
+      return [...this.playerField, ...this.opponentField];
+    }
+    return [...this.opponentField, ...this.playerField];
+  }
+
+  async drawThenDiscard(amount, isOpponent) {
+    await this.drawCard(amount, isOpponent);
+    await sleep(500);
+    await this.discardSelfCard(isOpponent);
+  }
+
   endTurn() {
     if (this.currentTurn === 'player') {
       this.currentTurn = 'opponent';
@@ -2370,15 +2388,9 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       }
   }
 
-  async drawThenDiscard(amount, isOpponent) {
-    await this.drawCard(amount, isOpponent);
-    await sleep(500);
-    await this.discardSelfCard(isOpponent);
-  }
-
   opponentTurn() {
     setTimeout(async () => {
-      this.showTurnChangePopup('Opponent Turn'); // Show popup for opponent turn
+      this.showTurnChangePopup('Opponent Turn'); 
       this.cardPlayedThisTurn = false;
 
 
@@ -2412,7 +2424,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
           }
           await this.playCardOpponent(card)
         } else {
-          canPlay = false; // No more cards to play or field full
+          canPlay = false; 
         }
       }
 
@@ -2420,7 +2432,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       for (let card of this.opponentField) {
         if (card.activatedAbility && !card.abilityUsedThisTurn && !this.gameOver) {
           if (card.activatedAbility.cost != null && !['life', null].includes(card.activatedAbility.cost)) {
-             continue; // Skip abilities with costs other than life or null for now
+             continue; 
           }
           if (card.statusEffects.includes("stun")) {
             continue;
@@ -2436,8 +2448,8 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
               await sleep(500);
             }
           } else if (card.activatedAbility.cost === 'discard') {
-            if (this.opponentHand.length > 1) { // Ensure opponent has cards to discard, keep at least one card
-              const cardToDiscardIndex = 0; // Always discard the first card for simplicity for now
+            if (this.opponentHand.length > 1) { 
+              const cardToDiscardIndex = 0; 
               const discardedCard = this.opponentHand.splice(cardToDiscardIndex, 1)[0];
               this.discardCard(discardedCard, true);
               this.updateBattleLog(`Opponent discarded ${discardedCard.type} to activate ${card.type}'s ability.`);
@@ -2459,7 +2471,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
               
               
               this.renderHands();
-          } else { // No cost ability
+          } else { 
             this.updateBattleLog(`Opponent's ${card.type} activated ability: ${card.activatedAbility.text} (No Cost)`);
             await card.activatedAbility.action(this, true, await this.selectTargetForAbility(true, card.activatedAbility));
             card.abilityUsedThisTurn = true;
@@ -2482,10 +2494,10 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
         if (card.statusEffects.includes("stun")) {continue;}
         // Prioritize attacking the highest power target, then highest defense if powers are equal
         let targetCard = null;
-        let bestTargetValue = -999; // Initialize with a very low value
+        let bestTargetValue = -999; 
 
         for (const playerCard of this.playerField) {
-          let cardValue = playerCard.power * 0.6 + playerCard.defense * 0.4; // Weight power slightly higher
+          let cardValue = playerCard.power * 0.6 + playerCard.defense * 0.4; 
           if (cardValue > bestTargetValue) {
             bestTargetValue = cardValue;
             targetCard = playerCard;
@@ -2495,7 +2507,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
 
         if (this.playerField.length > 0 && !card.keywords.includes("evasive")) {
           if (!targetCard) {
-            targetCard = this.playerField[0]; // Fallback in case logic fails
+            targetCard = this.playerField[0]; 
           }
           const attackerElement = card.render();
           const targetElement = targetCard.render();
@@ -2588,7 +2600,7 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       this.currentPhaseIndex = 0;
       this.updatePhaseDisplay();
       this.updateLifeDisplay();
-      this.showTurnChangePopup('Your Turn'); // Show popup for player turn
+      this.showTurnChangePopup('Your Turn'); 
       const element = document.getElementById("player-area");
       element.scrollIntoView({ behavior: "smooth", block: "nearest" });
       document.body.style.zoom = 1.0;
@@ -2741,110 +2753,42 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
       revealCardContainer.style.overflowY = 'auto';
       revealCardContainer.style.width = 'auto';
 
+      const closeHandler = () => {
+        revealCardContainer.style.display = '';
+        revealCardContainer.style.minHeight = '';
+        revealCardContainer.style.maxHeight = '';
+        revealCardContainer.style.overflowY = '';
+        revealCardContainer.style.width = '';
 
-      this.playerHand.forEach(card => {
-        const cardElement = card.render();
-        cardElement.addEventListener('click', () => {
-          const index = this.playerHand.indexOf(card);
-          if (index > -1) {
-            this.playerHand.splice(index, 1);
-            this.discardCard(card, false); 
-            this.updateBattleLog(`You discarded ${card.type}.`);
-            revealPopup.style.display = 'none';
-            revealCardContainer.innerHTML = '';
-          }
-        });
-        revealCardContainer.appendChild(cardElement);
-      });
+        revealPopup.style.display = 'none';
+        revealCardContainer.innerHTML = '';
+        //resolve(false); 
+        //revealPopup.removeEventListener('click', closeHandler);
+        this.renderHands(true);
+      };      
 
       revealPopup.style.display = 'flex';
       return new Promise((resolve) => {
-        const closeHandler = () => {
-          revealCardContainer.style.display = '';
-          revealCardContainer.style.minHeight = '';
-          revealCardContainer.style.maxHeight = '';
-          revealCardContainer.style.overflowY = '';
-          revealCardContainer.style.width = '';
-
-          revealPopup.style.display = 'none';
-          revealCardContainer.innerHTML = '';
-          resolve(false); 
-          revealPopup.removeEventListener('click', closeHandler);
-          this.renderHands(true);
-        };
-        revealPopup.addEventListener('click', closeHandler);
-      });
-    }
-  }
-
-  conjureCard(amount, isOpponent) {
-    return new Promise((resolve) => {
-      let newCards = [];
-      for (let i = 0; i < amount; i++) {
-        let c = new Card();
-        c.generateRandomCard('upgrade');
-        c.game = this;
-        newCards.push(c);
-      }
-
-      if (!isOpponent) {
-        const revealPopup = document.getElementById('reveal-popup');
-        const revealCardContainer = document.getElementById('reveal-card');
-        revealCardContainer.innerHTML = '';
-        revealCardContainer.style.display = 'grid';
-        revealCardContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
-        revealCardContainer.style.minHeight = '400px';
-        revealCardContainer.style.maxHeight = '400px';
-        revealCardContainer.style.overflowY = 'auto';
-        revealCardContainer.style.width = 'auto';
-
-
-        newCards.forEach(card => {
+        this.playerHand.forEach(card => {
           const cardElement = card.render();
           cardElement.addEventListener('click', () => {
-            this.playerHand.push(card);
-            this.updateBattleLog(`You conjured ${card.type}.`);
-            revealPopup.style.display = 'none';
-            revealCardContainer.innerHTML = '';
-            card.render(true);
-            this.renderHands();
+            const index = this.playerHand.indexOf(card);
+            if (index > -1) {
+              this.playerHand.splice(index, 1);
+              this.discardCard(card, false); 
+              this.updateBattleLog(`You discarded ${card.type}.`);
+              revealPopup.style.display = 'none';
+              revealCardContainer.innerHTML = '';
+              closeHandler();
+              this.renderHands();
+              resolve(true);
+            }
           });
           revealCardContainer.appendChild(cardElement);
         });
-
-        revealPopup.style.display = 'flex';
-        
-        const closeHandler = () => {
-          revealCardContainer.style.display = '';
-          revealCardContainer.style.minHeight = '';
-          revealCardContainer.style.maxHeight = '';
-          revealCardContainer.style.overflowY = '';
-          revealCardContainer.style.width = '';
-
-          revealPopup.style.display = 'none';
-          revealCardContainer.innerHTML = '';
-          
-          revealPopup.removeEventListener('click', closeHandler);
-          console.log("Triggering");
-          resolve(false); 
-        };
-        revealPopup.addEventListener('click', closeHandler);
-        
-      } else {
-        let highRarity = 0;
-        let rarities = ["Common", "Rare", "Epic", "Legendary", "Holy"];
-        for (let i = 0; i < newCards.length; i++) {
-          let card = newCards[i];
-          if (rarities.indexOf(card.rarity) > highRarity) {
-            highRarity = i;
-          }
-        }
-        this.opponentHand.push(newCards[highRarity]);
-        this.updateBattleLog(`Opponent conjures ${newCards[highRarity].type}.`);
-        this.renderHands();
-        resolve(true);
-      }
-    });
+        //revealPopup.addEventListener('click', closeHandler);
+      });
+    }
   }
 
   async lookAtOpponentHandAndDiscard(isOpponent) {
@@ -2983,6 +2927,154 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
     }
     this.canPlayCard = true;
     this.updateNextPhaseButton();
+  }
+
+  async exileRandomCardFromHand(isOpponent) {
+    const hand = !isOpponent ? this.opponentHand : this.playerHand;
+    if (hand.length > 0) {
+      const cardToExile = hand[Math.floor(Math.random() * hand.length)];
+      this.exileCard(cardToExile, isOpponent);
+      this.updateBattleLog(`${isOpponent ? "Opponent" : "You"} exiled ${cardToExile.type} from hand.`);
+      this.renderHands();
+    } else {
+      this.updateBattleLog(`${isOpponent ? "Opponent" : "You"} hand is empty, no card to exile.`);
+    }
+  }
+
+  async playCardFromExile(isOpponent) {
+    const exilePile = !isOpponent ? this.opponentExilePile : this.playerExilePile;
+    const hand = !isOpponent ? this.opponentHand : this.playerHand;
+    const field = !isOpponent ? this.opponentField : this.playerField;
+
+    if (exilePile.length == 0) { return; }
+
+    if (isOpponent) {
+      const randomIndex = Math.floor(Math.random() * this.playerExilePile.length);
+      const discardedCard = this.playerExilePile.splice(randomIndex, 1)[0];
+      discardedCard.resetCard();
+      hand.push(discardedCard); //put into hand first so playCard works correctly
+      this.renderHands();
+      await this.playCard(discardedCard, hand, field, true);
+      this.updateBattleLog(`Opponent played ${discardedCard.type} from your exile.`);
+      this.renderHands();
+    } else {
+      const revealPopup = document.getElementById('reveal-popup');
+      const revealCardContainer = document.getElementById('reveal-card');
+      revealCardContainer.innerHTML = '';
+      revealCardContainer.style.display = 'grid';
+      revealCardContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+      revealCardContainer.style.minHeight = '400px';
+      revealCardContainer.style.maxHeight = '400px';
+      revealCardContainer.style.overflowY = 'auto';
+      revealCardContainer.style.width = 'auto';
+
+      const closeHandler = () => {
+        revealCardContainer.style.display = '';
+        revealCardContainer.style.minHeight = '';
+        revealCardContainer.style.maxHeight = '';
+        revealCardContainer.style.overflowY = '';
+        revealCardContainer.style.width = '';
+
+        revealPopup.style.display = 'none';
+        revealCardContainer.innerHTML = '';
+        resolve(false); 
+        revealPopup.removeEventListener('click', closeHandler);
+        this.renderHands(true);
+      };      
+
+      revealPopup.style.display = 'flex';
+      return new Promise( (resolve) => {
+        for (let card of this.opponentExilePile) {
+          const cardElement = card.render();
+          cardElement.addEventListener('click', async() => {
+            const index = this.opponentExilePile.indexOf(card);
+            if (index > -1) {
+              let discardedCard = this.opponentExilePile.splice(index, 1);
+              discardedCard.resetCard();
+              hand.push(discardedCard); //put into hand first so playCard works correctly
+              this.renderHands();
+              
+              revealPopup.style.display = 'none';
+              revealCardContainer.innerHTML = '';
+              closeHandler();
+              this.renderHands();
+              resolve(true);
+              await this.playCard(discardedCard, hand, field, true);
+            }
+          });
+          revealCardContainer.appendChild(cardElement);
+        }
+        //revealPopup.addEventListener('click', closeHandler);
+      });
+    }
+  }
+
+  upgradeOpponentDeck() {
+    const newCards = [];
+    for (let i = 0; i < 8; i++) {
+      const card = new Card();
+      card.game = this;
+      newCards.push(card.generateRandomCard('upgrade'));
+    }
+
+    this.initialOpponentDeck.sort((a, b) => {
+      const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary', 'Holy'];
+      let i = rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
+      if (i == 0) {
+        i = a.type.localeCompare(b.type);
+      }
+      if (i == 0 && a.type !== "Spell") {
+        i = a.power - b.power;
+      }
+      return i;
+    });
+
+    let cardsToRemove = 5;
+    let currentIndex = 0;
+
+    this.initialOpponentDeck.sort((a, b) => {
+      const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary', 'Holy'];
+      return rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
+    });
+    while (cardsToRemove > 0) {
+      this.initialOpponentDeck.splice(0,1);
+      cardsToRemove--;
+    }
+
+    for (let i = 0; i < 5; i++) {
+      this.initialOpponentDeck.push(newCards[i]);
+    }
+
+    this.updateBattleLog("Opponent's deck has been upgraded with new cards!");
+  }
+
+  async exileTopCardsOfDeck(amount, isOpponent) {
+    const deck = isOpponent ? this.opponentDeck : this.playerDeck;
+    if (deck.length > 0) {
+      for (let i = 0; i < amount; i++) {
+        if (deck.length > 0) {
+          const cardToExile = deck.pop();
+          this.exileCard(cardToExile, isOpponent);
+          this.updateBattleLog(`${isOpponent ? "Opponent" : "You"} exiled ${cardToExile.type} from deck.`);
+        }
+      }
+      this.renderHands();
+    } else {
+      this.updateBattleLog(`${isOpponent ? "Your" : "Opponent's"} deck is empty, no cards to exile.`);
+    }
+  }
+
+  showGameMessagePopup(message) {
+    if (this.gameMessagePopup && this.gameMessageText) {
+      this.gameMessageText.textContent = message;
+      this.gameMessagePopup.classList.add('show');
+    }
+  }
+
+  hideGameMessagePopup() {
+    if (this.gameMessagePopup) {
+      this.gameMessagePopup.classList.remove('show');
+    }
   }
 }
 
