@@ -2329,6 +2329,76 @@ dealDamageToRandomEnemyCardAndDraw(damageAmount, isOpponent) {
   }
 
 
+    conjureCard(amount, isOpponent) {
+    return new Promise((resolve) => {
+      let newCards = [];
+      for (let i = 0; i < amount; i++) {
+        let c = new Card();
+        c.generateRandomCard('upgrade');
+        c.game = this;
+        newCards.push(c);
+      }
+
+      if (!isOpponent) {
+        const revealPopup = document.getElementById('reveal-popup');
+        const revealCardContainer = document.getElementById('reveal-card');
+        revealCardContainer.innerHTML = '';
+        revealCardContainer.style.display = 'grid';
+        revealCardContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+        revealCardContainer.style.minHeight = '400px';
+        revealCardContainer.style.maxHeight = '400px';
+        revealCardContainer.style.overflowY = 'auto';
+        revealCardContainer.style.width = 'auto';
+
+
+        newCards.forEach(card => {
+          const cardElement = card.render();
+          cardElement.addEventListener('click', () => {
+            this.playerHand.push(card);
+            this.updateBattleLog(`You conjured ${card.type}.`);
+            revealPopup.style.display = 'none';
+            revealCardContainer.innerHTML = '';
+            card.render(true);
+            this.renderHands();
+          });
+          revealCardContainer.appendChild(cardElement);
+        });
+
+        revealPopup.style.display = 'flex';
+
+        const closeHandler = () => {
+          revealCardContainer.style.display = '';
+          revealCardContainer.style.minHeight = '';
+          revealCardContainer.style.maxHeight = '';
+          revealCardContainer.style.overflowY = '';
+          revealCardContainer.style.width = '';
+
+          revealPopup.style.display = 'none';
+          revealCardContainer.innerHTML = '';
+
+          revealPopup.removeEventListener('click', closeHandler);
+          console.log("Triggering");
+          resolve(false); 
+        };
+        revealPopup.addEventListener('click', closeHandler);
+
+      } else {
+        let highRarity = 0;
+        let rarities = ["Common", "Rare", "Epic", "Legendary", "Holy"];
+        for (let i = 0; i < newCards.length; i++) {
+          let card = newCards[i];
+          if (rarities.indexOf(card.rarity) > highRarity) {
+            highRarity = i;
+          }
+        }
+        this.opponentHand.push(newCards[highRarity]);
+        this.updateBattleLog(`Opponent conjures ${newCards[highRarity].type}.`);
+        this.renderHands();
+        resolve(true);
+      }
+    });
+  }
+
     async playCardOpponent(card) {
       if (card.isSpell) {
         await this.activateSpell(card, true);
