@@ -30,7 +30,7 @@ body {
     "opponent-area"
     "battle-log"
     "controls";
-  grid-template-columns: 3fr;
+  grid-template-columns: 100%;
   grid-area:stuff;
 }
 
@@ -52,14 +52,16 @@ body {
 
     #game-container {
         grid-template-rows: auto;
-        grid-template-columns: 1fr;
+        grid-template-columns: 100%;
         grid-template-areas:
-          "stuff"
-          "battle-log"
-          "controls";
+          "player-area"
+          "opponent-area"
+          "controls"
+          "turn-phase"
+          "battle-log";
         margin-top: 10px;
         gap: 5px;
-        width: 90%;
+        width: 95%;
     }
 
     #no-resize {
@@ -154,7 +156,7 @@ body {
         "player-info"
         "hand"
         "field";
-      grid-template-rows: 1fr 2fr 2fr;
+      grid-template-rows: 120px 185px 185px;
     }
 
     #player-field {
